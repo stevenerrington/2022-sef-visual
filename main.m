@@ -25,6 +25,6 @@ load(fullfile(dirs.data_proc,'behavior\','bayesianSSRT.mat'))
 load(fullfile(dirs.data_proc,'behavior\','FileNames.mat'))
 
 %% Find neurons with visual activity (general) %%%%%%%%%%%%%%%%%%%%%%%%%%%
-identify_visualactivty
+identify_visualactivity
 
 

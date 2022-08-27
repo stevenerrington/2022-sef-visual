@@ -39,10 +39,8 @@ functional_visualactivity
 
 %%% IN DEVLEOPMENT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Laterality: This script will extract X, Y, and Z.
-laterality_visualactivity
+get_matchedtrials;
+value_visual;
+lateral_visual;
 
-% Value: This script will extract X, Y, and Z
-value_visualactivity
-
-% Laminar: This script will extract X, Y, and Z
-value_visualactivity
+laminar_visual

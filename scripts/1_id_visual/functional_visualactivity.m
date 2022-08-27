@@ -11,6 +11,7 @@ variables).
 load(fullfile(dirs.root,'results','mat_files','neuron_index.mat'))
 load(fullfile(dirs.root,'results','mat_files','visual_info.mat'))
 load(fullfile(dirs.root,'results','mat_files','visual_sdf_1.mat'))
+load(fullfile(dirs.root,'data','heatmap_visual_colormap.mat'))
 
 %% Figure: Heatmap comparing visual and non-visual neurons
 
@@ -24,12 +25,12 @@ neuron_order = [neuron_index.visual_pos(latency_order_pos); neuron_index.visual_
 fig_out = figure('Renderer', 'painters', 'Position', [100 100 400 600]);
 subplot(2,1,1)
 imagesc('XData',timewins.sdf,'YData',1:length(neuron_index.visual), 'CData',sdf_visual_maxnorm(neuron_order,:))
-xlim([-200 500]); ylim([1 400]);  caxis([-1,1]); colormap(parula); vline(0,'k')
+xlim([-200 500]); ylim([1 400]);  caxis([-1,1]); colormap(heatmap_cmap); vline(0,'k')
 xlabel('Time from Target (ms)'); ylabel('Neuron')
 
 subplot(2,1,2)
 imagesc('XData',timewins.sdf,'YData',1:length(neuron_index.nonvisual), 'CData',sdf_visual_maxnorm(neuron_index.nonvisual,:))
-xlim([-200 500]); ylim([1 400]); caxis([-1,1]); colormap(parula); vline(0,'k')
+xlim([-200 500]); ylim([1 400]); caxis([-1,1]); colormap(heatmap_cmap); vline(0,'k')
 xlabel('Time from Target (ms)'); 
 
 % Once we're done with a page, save it and close it.
@@ -76,12 +77,12 @@ close(pop_figure)
 
 %% Figure: Proportion of neurons that are faciliated, suppressed, or unmodulated.
 spkwidth_cutoff = 249;
-neuron_index.vis_fac_narrow = visual_info.neuron_i(~isnan(visual_info.cd_detect_onset) & visual_info.visual_flag == 1 & visual_info.visual_fac == 1 & visual_info.spkWidth < spkwidth_cutoff);
-neuron_index.vis_fac_broad =  visual_info.neuron_i(~isnan(visual_info.cd_detect_onset) & visual_info.visual_flag == 1 & visual_info.visual_fac == 1 & visual_info.spkWidth > spkwidth_cutoff);
-neuron_index.vis_sup_narrow = visual_info.neuron_i(~isnan(visual_info.cd_detect_onset) & visual_info.visual_flag == 1 & visual_info.visual_sup == 1 & visual_info.spkWidth < spkwidth_cutoff);
-neuron_index.vis_sup_broad =  visual_info.neuron_i(~isnan(visual_info.cd_detect_onset) & visual_info.visual_flag == 1 & visual_info.visual_sup == 1 & visual_info.spkWidth > spkwidth_cutoff);
-neuron_index.nonvis_narrow = visual_info.neuron_i(visual_info.visual_flag == 0 & visual_info.spkWidth > spkwidth_cutoff);
-neuron_index.nonvis_broad = visual_info.neuron_i(visual_info.visual_flag == 0 & visual_info.spkWidth <= spkwidth_cutoff);
+neuron_index.vis_fac_narrow = visual_info.neuron_i(ismember(1:575,neuron_index.visual)' & visual_info.visual_fac == 1 & visual_info.spkWidth < spkwidth_cutoff);
+neuron_index.vis_fac_broad =  visual_info.neuron_i(ismember(1:575,neuron_index.visual)' & visual_info.visual_fac == 1 & visual_info.spkWidth > spkwidth_cutoff);
+neuron_index.vis_sup_narrow = visual_info.neuron_i(ismember(1:575,neuron_index.visual)' & visual_info.visual_sup == 1 & visual_info.spkWidth < spkwidth_cutoff);
+neuron_index.vis_sup_broad =  visual_info.neuron_i(ismember(1:575,neuron_index.visual)' & visual_info.visual_sup == 1 & visual_info.spkWidth > spkwidth_cutoff);
+neuron_index.nonvis_narrow = visual_info.neuron_i(ismember(1:575,neuron_index.nonvisual)' & visual_info.spkWidth > spkwidth_cutoff);
+neuron_index.nonvis_broad = visual_info.neuron_i(ismember(1:575,neuron_index.nonvisual)' & visual_info.spkWidth <= spkwidth_cutoff);
 
 n_visual_fac_narrow = length(neuron_index.vis_fac_narrow);
 n_visual_fac_broad = length(neuron_index.vis_fac_broad);
@@ -180,8 +181,8 @@ close(example_sdf_out)
 session_label = FileNames{executiveBeh.neuronMatPosit(neuron_plot_list,1)};
 
 
-
-
+%% Organize: Save updated visual neuron categories.
+save(fullfile(dirs.root,'results','mat_files','neuron_index.mat'),'neuron_index')
 
 
 

@@ -1,5 +1,20 @@
-%% Extract: Get average spiking activity around target onset.
+%{
+Extract spiking activity and identify neurons with marked visual modulation
+2022-08-26 | S P Errington
 
+In this script, we will loop through our neurons and identify neurons that
+show periods of significant deviation of activity from baseline, in
+response to a visual target. We will do this through identifying neurons
+that show a significant difference in mean FR between these two periods,
+and finding when this activity starts/ends.
+
+This code will produce figures of these spike density functions for manual
+curation (in the results folder), and will give the index of visual neurons
+(neuron_index and visual_info variables).
+%}
+
+
+%% Extract: Get average spiking activity around target onset.
 parfor neuron_i = 1:575
     fprintf('Extracting target aligned SDF for neuron %i of %i. \n',neuron_i, 575)
     
@@ -23,7 +38,6 @@ parfor neuron_i = 1:575
         sdf_visual_zscore(neuron_i,:) = (sdf_visual_raw(neuron_i,:) - fr_visual_baseline_mean)./...
             fr_visual_baseline_std;
     end
-    
     
     % Analysis: Compare mean FR between baseline and visual period
     fr_comp_visual_baseline_mean = []; fr_comp_visual_target_mean = [];
@@ -77,8 +91,8 @@ for page_i = 1:n_batches
 end
 
 %% Analysis: Probe deviation from a baseline period during target onset period
-cd_1 = 3; cd_1t = 100; % Signal must be above 2 sd for 100 ms,
-cd_2 = 6; cd_2t = 25;  % ...and above 6 sd for 10 ms.
+cd_1 = 3; cd_1t = 75; % Signal must be above 3 sd for 100 ms,
+cd_2 = 6; cd_2t = 25;  % ...and above 6 sd for 25 ms.
 
 clear onset_cd_thresh offset_cd_thresh
 % Get the neuron and z-scored activity
@@ -98,7 +112,7 @@ for neuron_i = 1:575
     
     % We will then just limit the periods of modulation that occur within 0 and
     % 200 ms following target onset.
-    modOnset_cd1 = modOnset_cd1(modOnset_cd1 > 0 & modOnset_cd1 < 200);
+    modOnset_cd1 = modOnset_cd1(modOnset_cd1 > 0 & modOnset_cd1 < 150);
     
     % After determining the onset falls within this criteria, we can then "walk
     % out" from this point and stop when we fall back below the threshold.
@@ -130,7 +144,7 @@ for neuron_i = 1:575
     % Identify peak periods, and find the absolute peak activity
     [pks,locs] = findpeaks(neuron_sdf);
     peak_time = locs(find(pks == max(abs(pks))))- timewins.zero;
-    peak_time = peak_time(peak_time > 0 & peak_time < 200);
+    peak_time = peak_time(peak_time > 0 & peak_time < 150);
     
     if ~isempty(peak_time)
         % Once we've identified the peak, then we can "walk out" forwards and
@@ -172,7 +186,7 @@ end
 
 %% Organize: Compile analyses into one table to look for convergent evidence of visual activty
 % Generate table
-clear visual_extract
+clear visual_info
 for neuron_i = 1:575
     
     session = executiveBeh.neuronMatPosit(neuron_i,1);
@@ -192,7 +206,7 @@ for neuron_i = 1:575
     peak_detect_offset = offset_peak_thresh(neuron_i);
     peak_detect_peak = peak_peak_thresh(neuron_i);
     
-    visual_extract(neuron_i,:) = table(neuron_i,session,session_label,...
+    visual_info(neuron_i,:) = table(neuron_i,session,session_label,...
         monkey_label,spkWidth,site,visual_flag,visual_fac,visual_sup,...
         cd_detect_onset,cd_detect_offset,...
         peak_detect_onset,peak_detect_offset,peak_detect_peak);
@@ -200,14 +214,13 @@ for neuron_i = 1:575
 end
 
 
-
 %% Organize: Get indices of visually responsive neurons
 % Find neurons that meet a defined criteria
 %   Here, we are looking at neurons that have a significantly different
 %   firing rate between a baseline and visual period, and also hit the
 %   criteria to allow for time extraction (i.e activity > 2SD / 6SD).
-neuron_index.visual = find(visual_extract.visual_flag == 1 & ...
-    ~isnan(visual_extract.cd_detect_onset));
+neuron_index.visual = find(visual_info.visual_flag == 1 & ...
+    ~isnan(visual_info.cd_detect_onset));
 
 neuron_index.nonvisual = find(~ismember(1:575,neuron_index.visual));
 
@@ -235,7 +248,7 @@ for page_i = 1:n_batches
             plot(timewins.sdf, sdf_visual_zscore(neuron_i,:),'k');
             xlim([-200 500]); vline(0,'k--'); hline(0,'k--')%, hline([-3 3],'r:'); hline([-6 6],'r:'); 
             % Draw the detected onset in red (dotted)
-            vline(visual_extract.onset_cd_thresh(neuron_i),'r:')
+            vline([visual_info.cd_detect_onset(neuron_i) visual_info.cd_detect_offset(neuron_i)],'r:')
             % and label our figures
             xlabel('Time from Target (ms)')
             ylabel('Firing rate (z-score)')
@@ -254,114 +267,43 @@ for page_i = 1:n_batches
     close(fig_out)
 end
 
-%% Figure: Heatmap comparing visual and non-visual neurons
+%% Organize: Manual curation adjustments
+%  Note: these adjustments were made after visual inspection of SDF's with
+%  properties derived from a 3/6 sd cutoff, at 75/25 ms thresholds, with a
+%  latest onset of 150 ms.
 
-neuron_index.visual_pos = neuron_index.visual(visual_extract.visual_fac(neuron_index.visual) == 1);
-neuron_index.visual_neg = neuron_index.visual(visual_extract.visual_sup(neuron_index.visual) == 1);
-[~, latency_order_pos] = sort(visual_extract.cd_detect_onset(neuron_index.visual_pos),'ascend');
-[~, latency_order_neg] = sort(visual_extract.cd_detect_onset(neuron_index.visual_neg),'descend');
+% (1): Incorrectly identified visual-neurons %%%%%%%%%%%%%%%%%%%%%%%%%
+visual_info.visual_flag([49,52,68,133,382,402],:) = 0;
 
-neuron_order = [neuron_index.visual_pos(latency_order_pos); neuron_index.visual_neg(latency_order_neg)];
-
-fig_out = figure('Renderer', 'painters', 'Position', [100 100 400 600]);
-subplot(2,1,1)
-imagesc('XData',timewins.sdf,'YData',1:length(neuron_index.visual), 'CData',sdf_visual_maxnorm(neuron_order,:))
-xlim([-200 500]); ylim([1 400]);  caxis([-1,1]); colormap(parula); vline(0,'k')
-xlabel('Time from Target (ms)'); ylabel('Neuron')
-
-subplot(2,1,2)
-imagesc('XData',timewins.sdf,'YData',1:length(neuron_index.nonvisual), 'CData',sdf_visual_maxnorm(neuron_index.nonvisual,:))
-xlim([-200 500]); ylim([1 400]); caxis([-1,1]); colormap(parula); vline(0,'k')
-xlabel('Time from Target (ms)'); 
-
-% Once we're done with a page, save it and close it.
-filename = fullfile(dirs.root,'results','gen_figures','population_figure_heatmap.pdf');
-set(fig_out,'PaperSize',[20 10]); %set the paper size to what you want
-print(fig_out,filename,'-dpdf') % then print it
-close(fig_out)
-
-%% Figure:
-clear input_sdf population_sdf
-input_sdf = num2cell(sdf_visual_zscore, 2);
-
-for neuron_i = 1:575
-    if ismember(neuron_i,neuron_index.visual_pos)
-        class_label{neuron_i,1} = '1_visual_pos';
-    elseif ismember(neuron_i,neuron_index.visual_neg)
-        class_label{neuron_i,1} = '2_visual_neg';
-    else
-        class_label{neuron_i,1} = '3_other';
-    end
+% (2): Adjust onset latency %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%       Plot figures and use pointer to find onset ----------------
+for neuron_i = [80,83,103,125,160,162,163,202,269,270,276,331]
+    fig_out = figure('Renderer', 'painters', 'Position', [100 100 400 400]);
+    
+    plot(timewins.sdf, sdf_visual_zscore(neuron_i,:),'k');
+    xlim([-200 500]); vline(0,'k--'); hline(0,'k--')%, hline([-3 3],'r:'); hline([-6 6],'r:');
+    % Draw the detected onset in red (dotted)
+    vline(visual_info.cd_detect_onset(neuron_i),'r:')
+    xlabel('Time from Target (ms)')
+    ylabel('Firing rate (z-score)')
+    title(['Neuron: ' int2str(neuron_i) ])
 end
+%       Update timings with manual markings (note: most were made at the
+%       2sd mark).
+visual_info.cd_detect_onset...
+    ([80,83,103,125,160,162,163,202,269,270,276,331]) =...
+     [85,74, 75, 38, 52, 36,125, 71, 82, 92, 91,113];
 
-population_sdf(1,1)=gramm('x',timewins.sdf,'y',input_sdf,'color',class_label);
-population_sdf(1,1).stat_summary();
-population_sdf(1,1).axe_property('XLim',[-200 500],'YLim',[-15 15]);
-population_sdf(1,1).set_names('x','Time from Target (ms)','y','FR (Z-score)');
+% (3): Update visual neuron index accordingly %%%%%%%%%%%%%%%%%%%%%%%%
+neuron_index.visual = []; neuron_index.nonvisual = [];
 
-pop_figure = figure('Renderer', 'painters', 'Position', [100 100 600 300]);
-population_sdf.draw();
+neuron_index.visual = find(visual_info.visual_flag == 1 & ...
+    ~isnan(visual_info.cd_detect_onset));
 
-% Once we're done with a page, save it and close it.
-filename = fullfile(dirs.root,'results','gen_figures','population_figure_visual.pdf');
-set(pop_figure,'PaperSize',[20 10]); %set the paper size to what you want
-print(pop_figure,filename,'-dpdf') % then print it
-close(pop_figure)
+neuron_index.nonvisual = find(~ismember(1:575,neuron_index.visual));
 
-%% %% Analysis; clustering visual neurons
-% 
-% timeWin = [-250:500];
-% timeWin_inputSDF = timewins.zero + timeWin;
-% inputSDF = {sdf_visual_raw(:,timeWin_inputSDF), sdf_visual_raw(:,timeWin_inputSDF)};
-% 
-% sdfTimes = {timeWin, timeWin}; sdfEpoch = {timeWin, timeWin};
-% 
-% 
-% [sortIDs,idxDist, raw, respSumStruct, rawLink,myK] =...
-%     consensusCluster(inputSDF,sdfTimes,'-e',sdfEpoch);
-% 
-% 
-% 
-% normResp = scaleResp(inputSDF,sdfTimes,'max');
-% 
-% nClusters_manual = 3; clusterNeurons = [];
-% for i = 1:nClusters_manual
-%     clusterNeurons{i} = find(sortIDs(:,nClusters_manual) == i );
-% end
-% 
-% % Plot clustering output %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% % Dendrogram
-% 
-% figure('Renderer', 'painters', 'Position', [100 100 500 400]);
-% 
-% subplot(1,5,5);
-% for ir = 1:size(raw,1)
-%     for ic = (ir+1):size(raw,2)
-%         raw(ic,ir) = raw(ir,ic);
-%     end
-% end
-% [h,~,outPerm] = dendrogram(rawLink,0,'Orientation','right');
-% set(gca,'YDir','Reverse');
-% klDendroClustChange(h,rawLink,sortIDs(:,nClusters_manual))
-% set(gca,'YTick',[]); xlabel('Similarity')
-% subplot(1,5,[1:4]);
-% 
-% imagesc(raw(outPerm,outPerm));
-% colormap(gray);
-% xlabel('Unit Number'); set(gca,'YAxisLocation','Left');
-% xticks([50:50:500]); yticks([50:50:500])
-% 
-% close all
-% 
-% 
-% 
-
-
-
-
-
-
-
-
-
+%% Organize: output data
+save(fullfile(dirs.root,'results','mat_files','neuron_index.mat'),'neuron_index')
+save(fullfile(dirs.root,'results','mat_files','visual_info.mat'),'visual_info')
+save(fullfile(dirs.root,'results','mat_files','visual_sdf_1.mat'),'sdf_visual_raw','sdf_visual_zscore','sdf_visual_maxnorm')
 

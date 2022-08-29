@@ -11,7 +11,7 @@ donut function (in src folder)
 %% Setup workspace %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 clear all; clc
 % Get directories %%%%%%%%%%%%%%%%%%%%%%%%
-user = 'erringsp';
+user = 'erringsp_WH633'; % erringsp
 dirs = setup_dirs(user);
 
 % Define windows %%%%%%%%%%%%%%%%%%%%%%%%%%

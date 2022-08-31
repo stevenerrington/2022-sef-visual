@@ -23,10 +23,11 @@ parfor neuron_i = 1:575
     spk_in = load(fullfile(dirs.data_spike,['SDF_' int2str(neuron_i)]));
     
     % Initialise arrays for parfor loop
-    sdf_saccade_ns_fast_ssd_raw = []; sdf_saccade_ns_slow_ssd_raw = [];
-    sdf_saccade_nc_ssd_raw = []; sdf_saccade_canc_ssd_raw = [];
-    sdf_saccade_ns_fast_ssd_zscore = []; sdf_saccade_ns_slow_ssd_zscore = [];
-    sdf_saccade_nc_ssd_zscore = []; sdf_saccade_canc_ssd_zscore = [];
+    sdf_target_ns_fast_ssd_raw = []; sdf_target_ns_slow_ssd_raw = [];
+    sdf_target_nc_ssd_raw = []; sdf_target_canc_ssd_raw = [];
+    sdf_target_ns_fast_ssd_zscore = []; sdf_target_ns_slow_ssd_zscore = [];
+    sdf_target_nc_ssd_zscore = []; sdf_target_canc_ssd_zscore = [];
+    sdf_saccade_ns_all_raw = []; sdf_saccade_ns_all_zscore = [];
     
     % As we are looking at canceled/non-canc trials here, we will latency
     % match.
@@ -44,8 +45,8 @@ parfor neuron_i = 1:575
         saccade_win = []; saccade_win = [-100:100] + timewins.zero;
         
         % Get baseline firing rates (across all trial types)
-        fr_saccade_baseline_mean = nanmean(nanmean(spk_in.SDF.target(trial_all,baseline_win)));
-        fr_saccade_baseline_std = nanstd(nanmean(spk_in.SDF.target(trial_all,baseline_win)));
+        fr_target_baseline_mean = nanmean(nanmean(spk_in.SDF.target(trial_all,baseline_win)));
+        fr_target_baseline_std = nanstd(nanmean(spk_in.SDF.target(trial_all,baseline_win)));
         
         % Get RT for matching alignment on canceled trials
         RT = []; RT = executiveBeh.TrialEventTimes_Overall{session_i}(:,4) - ...
@@ -53,43 +54,54 @@ parfor neuron_i = 1:575
         mean_match_RT = round(nanmean(RT(trial_ns_slow)));
         alignment_index_canc = timewins.zero + mean_match_RT + [-600:600];
         
-        if fr_saccade_baseline_std == 0 | executiveBeh.inh_trcount_SSD{session_i}(ssd_i) < 2
-            sdf_saccade_ns_fast_ssd_raw(ssd_i,:) = nan(1,length(timewins.sdf));
-            sdf_saccade_ns_slow_ssd_raw(ssd_i,:) = nan(1,length(timewins.sdf));
-            sdf_saccade_nc_ssd_raw(ssd_i,:) = nan(1,length(timewins.sdf));
-            sdf_saccade_canc_ssd_raw(ssd_i,:) = nan(1,length(timewins.sdf));
+        if fr_target_baseline_std == 0 | executiveBeh.inh_trcount_SSD{session_i}(ssd_i) < 2
+            sdf_target_ns_fast_ssd_raw(ssd_i,:) = nan(1,length(timewins.sdf));
+            sdf_target_ns_slow_ssd_raw(ssd_i,:) = nan(1,length(timewins.sdf));
+            sdf_target_nc_ssd_raw(ssd_i,:) = nan(1,length(timewins.sdf));
+            sdf_target_canc_ssd_raw(ssd_i,:) = nan(1,length(timewins.sdf));
+            sdf_saccade_ns_all_raw(ssd_i,:) = nan(1,length(timewins.sdf));
             
-            sdf_saccade_ns_fast_ssd_zscore(ssd_i,:) = nan(1,length(timewins.sdf));
-            sdf_saccade_ns_slow_ssd_zscore(ssd_i,:) = nan(1,length(timewins.sdf));
-            sdf_saccade_nc_ssd_zscore(ssd_i,:) = nan(1,length(timewins.sdf));
-            sdf_saccade_canc_ssd_zscore(ssd_i,:) = nan(1,length(timewins.sdf));
-            
+            sdf_target_ns_fast_ssd_zscore(ssd_i,:) = nan(1,length(timewins.sdf));
+            sdf_target_ns_slow_ssd_zscore(ssd_i,:) = nan(1,length(timewins.sdf));
+            sdf_target_nc_ssd_zscore(ssd_i,:) = nan(1,length(timewins.sdf));
+            sdf_target_canc_ssd_zscore(ssd_i,:) = nan(1,length(timewins.sdf));         
         else
-            sdf_saccade_ns_fast_ssd_raw(ssd_i,:) = nanmean(spk_in.SDF.target(trial_ns_fast,:));
-            sdf_saccade_ns_slow_ssd_raw(ssd_i,:) = nanmean(spk_in.SDF.target(trial_ns_slow,:));
-            sdf_saccade_nc_ssd_raw(ssd_i,:) = nanmean(spk_in.SDF.target(trial_nc,:));
-            sdf_saccade_canc_ssd_raw(ssd_i,:) = nanmean(spk_in.SDF.target(trial_c,:));
+            sdf_target_ns_fast_ssd_raw(ssd_i,:) = nanmean(spk_in.SDF.target(trial_ns_fast,:));
+            sdf_target_ns_slow_ssd_raw(ssd_i,:) = nanmean(spk_in.SDF.target(trial_ns_slow,:));
+            sdf_target_nc_ssd_raw(ssd_i,:) = nanmean(spk_in.SDF.target(trial_nc,:));
+            sdf_target_canc_ssd_raw(ssd_i,:) = nanmean(spk_in.SDF.target(trial_c,:));
             
-            sdf_saccade_ns_fast_ssd_zscore(ssd_i,:) = (sdf_saccade_ns_fast_ssd_raw(ssd_i,:) - fr_saccade_baseline_mean)./...
-                fr_saccade_baseline_std;
-            sdf_saccade_ns_slow_ssd_zscore(ssd_i,:) = (sdf_saccade_ns_slow_ssd_raw(ssd_i,:) - fr_saccade_baseline_mean)./...
-                fr_saccade_baseline_std;
-            sdf_saccade_nc_ssd_zscore(ssd_i,:) = (sdf_saccade_nc_ssd_raw(ssd_i,:) - fr_saccade_baseline_mean)./...
-                fr_saccade_baseline_std;
-            sdf_saccade_canc_ssd_zscore(ssd_i,:) = (sdf_saccade_canc_ssd_raw(ssd_i,:) - fr_saccade_baseline_mean)./...
-                fr_saccade_baseline_std;
+            sdf_target_ns_fast_ssd_zscore(ssd_i,:) = (sdf_target_ns_fast_ssd_raw(ssd_i,:) - fr_target_baseline_mean)./...
+                fr_target_baseline_std;
+            sdf_target_ns_slow_ssd_zscore(ssd_i,:) = (sdf_target_ns_slow_ssd_raw(ssd_i,:) - fr_target_baseline_mean)./...
+                fr_target_baseline_std;
+            sdf_target_nc_ssd_zscore(ssd_i,:) = (sdf_target_nc_ssd_raw(ssd_i,:) - fr_target_baseline_mean)./...
+                fr_target_baseline_std;
+            sdf_target_canc_ssd_zscore(ssd_i,:) = (sdf_target_canc_ssd_raw(ssd_i,:) - fr_target_baseline_mean)./...
+                fr_target_baseline_std;
+            
+            
             
         end
     end
-    sdf_saccade_ns_fast_raw(neuron_i,:) = nanmean(sdf_saccade_ns_fast_ssd_raw);
-    sdf_saccade_ns_slow_raw(neuron_i,:) = nanmean(sdf_saccade_ns_slow_ssd_raw);
-    sdf_saccade_nc_raw(neuron_i,:)      = nanmean(sdf_saccade_nc_ssd_raw);
-    sdf_saccade_canc_raw(neuron_i,:)    = nanmean(sdf_saccade_canc_ssd_raw);
     
-    sdf_saccade_ns_fast_zscore(neuron_i,:) = nanmean(sdf_saccade_ns_fast_ssd_zscore);
-    sdf_saccade_ns_slow_zscore(neuron_i,:) = nanmean(sdf_saccade_ns_slow_ssd_zscore);
-    sdf_saccade_nc_zscore(neuron_i,:)     = nanmean(sdf_saccade_nc_ssd_zscore);
-    sdf_saccade_canc_zscore(neuron_i,:)   = nanmean(sdf_saccade_canc_ssd_zscore);
+    sdf_target_ns_raw(neuron_i,:) = nanmean(spk_in.SDF.target(trial_all,:));
+    sdf_saccade_ns_raw(neuron_i,:) = nanmean(spk_in.SDF.saccade(trial_all,:));
+    
+    sdf_target_ns_zscore(neuron_i,:) = (sdf_target_ns_raw(neuron_i,:) - fr_target_baseline_mean)./...
+        fr_target_baseline_std;
+    sdf_saccade_ns_zscore(neuron_i,:) = (sdf_saccade_ns_raw(neuron_i,:) - fr_target_baseline_mean)./...
+        fr_target_baseline_std;
+    
+    sdf_target_ns_fast_raw(neuron_i,:) = nanmean(sdf_target_ns_fast_ssd_raw);
+    sdf_target_ns_slow_raw(neuron_i,:) = nanmean(sdf_target_ns_slow_ssd_raw);
+    sdf_target_nc_raw(neuron_i,:)      = nanmean(sdf_target_nc_ssd_raw);
+    sdf_target_canc_raw(neuron_i,:)    = nanmean(sdf_target_canc_ssd_raw);
+    
+    sdf_target_ns_fast_zscore(neuron_i,:) = nanmean(sdf_target_ns_fast_ssd_zscore);
+    sdf_target_ns_slow_zscore(neuron_i,:) = nanmean(sdf_target_ns_slow_ssd_zscore);
+    sdf_target_nc_zscore(neuron_i,:)     = nanmean(sdf_target_nc_ssd_zscore);
+    sdf_target_canc_zscore(neuron_i,:)   = nanmean(sdf_target_canc_ssd_zscore);
 end
 
 
@@ -113,8 +125,8 @@ for page_i = 1:n_batches
             ssd_mean = executiveBeh.inh_SSD{session_i}(executiveBeh.midSSDindex(session_i));
             
             subplot(n_plot_x, n_plot_y, plot_i); hold on
-            plot(timewins.sdf, sdf_saccade_canc_raw(neuron_i,:),'color',colors.canceled,'LineWidth',0.5)
-            plot(timewins.sdf, sdf_saccade_ns_slow_raw(neuron_i,:),'color',colors.nostop,'LineWidth',0.5)
+            plot(timewins.sdf, sdf_target_canc_raw(neuron_i,:),'color',colors.canceled,'LineWidth',0.5)
+            plot(timewins.sdf, sdf_target_ns_slow_raw(neuron_i,:),'color',colors.nostop,'LineWidth',0.5)
             
             xlim([-100 800]); vline(0,'k--'); hline(0,'k--');
             vline(ssd_mean,'r--'); vline(ssd_mean + executiveBeh.SSRT_integrationWeighted_all(session_i),'r:')
@@ -138,8 +150,8 @@ end
 
 %% Figure: Population spike-density function for visual neurons
 clear input_sdf population_sdf
-input_sdf_canc = num2cell(sdf_saccade_canc_zscore(neuron_index.visual_pos,:), 2);
-input_sdf_nostop = num2cell(sdf_saccade_ns_slow_zscore(neuron_index.visual_pos,:), 2);
+input_sdf_canc = num2cell(sdf_target_canc_zscore(neuron_index.visual_pos,:), 2);
+input_sdf_nostop = num2cell(sdf_saccade_ns_zscore(neuron_index.visual_pos,:), 2);
 class_label = [repmat({'1_Canceled'},length(input_sdf_canc),1); repmat({'2_Nostop'},length(input_sdf_nostop),1)];
 % Produce the figure, collapsed across all monkeys
 population_sdf(1,1)=gramm('x',timewins.sdf,'y',[input_sdf_canc;input_sdf_nostop],'color',class_label);

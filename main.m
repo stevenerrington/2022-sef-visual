@@ -11,7 +11,7 @@ donut function (in src folder)
 %% Setup workspace %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 clear all; clc
 % Get directories %%%%%%%%%%%%%%%%%%%%%%%%
-user = 'erringsp_WH633'; % erringsp
+user = 'erringsp'; % erringsp
 dirs = setup_dirs(user);
 
 % Define windows %%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -27,6 +27,9 @@ load(fullfile(dirs.data_proc,'behavior\','executiveBeh.mat'))
 load(fullfile(dirs.data_proc,'behavior\','bayesianSSRT.mat'))
 load(fullfile(dirs.data_proc,'behavior\','FileNames.mat'))
 
+% Extract matched trial indices
+get_matchedtrials
+
 %% Analysis codes %%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Identify: This script will extract X, Y, and Z.
 identify_visualactivity
@@ -34,13 +37,18 @@ identify_visualactivity
 % Functional: This script will extract X, Y, and Z.
 functional_visualactivity
 
+% Value-sensitivity: This script will compare the visual response between
+% low and high reward conditions
+value_visual;
+
+% Laterality-sensitivity: This script will compare the visual response
+% between left and right target presentations
+lateral_visual;
 
 
 
 %%% IN DEVLEOPMENT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Laterality: This script will extract X, Y, and Z.
-get_matchedtrials;
-value_visual;
-lateral_visual;
+;
 
 laminar_visual

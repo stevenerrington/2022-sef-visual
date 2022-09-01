@@ -85,8 +85,8 @@ parfor neuron_i = 1:575
         end
     end
     
-    sdf_target_ns_raw(neuron_i,:) = nanmean(spk_in.SDF.target(trial_all,:));
-    sdf_saccade_ns_raw(neuron_i,:) = nanmean(spk_in.SDF.saccade(trial_all,:));
+    sdf_target_ns_raw(neuron_i,:) = nanmean(spk_in.SDF.target(executiveBeh.ttx.GO{session_i},:));
+    sdf_saccade_ns_raw(neuron_i,:) = nanmean(spk_in.SDF.saccade(executiveBeh.ttx.GO{session_i},:));
     
     sdf_target_ns_zscore(neuron_i,:) = (sdf_target_ns_raw(neuron_i,:) - fr_target_baseline_mean)./...
         fr_target_baseline_std;
@@ -106,60 +106,22 @@ end
 
 
 
-%% Extract: Produce summary sheet figure for mean SDF
-
-n_plot_x = 4; n_plot_y = 3; n_plot_sheet = n_plot_x*n_plot_y;
-n_batches = round(575/n_plot_sheet,-1)+1;
-getColors
-
-neuron_i = 0;
-for page_i = 1:n_batches
-    fig_out = figure('Renderer', 'painters', 'Position', [100 100 1200 800]);
-    
-    for plot_i = 1:n_plot_sheet
-        neuron_i = neuron_i+1;
-        
-        
-        try
-            session_i = executiveBeh.neuronMatPosit(neuron_i,1);
-            ssd_mean = executiveBeh.inh_SSD{session_i}(executiveBeh.midSSDindex(session_i));
-            
-            subplot(n_plot_x, n_plot_y, plot_i); hold on
-            plot(timewins.sdf, sdf_target_canc_raw(neuron_i,:),'color',colors.canceled,'LineWidth',0.5)
-            plot(timewins.sdf, sdf_target_ns_slow_raw(neuron_i,:),'color',colors.nostop,'LineWidth',0.5)
-            
-            xlim([-100 800]); vline(0,'k--'); hline(0,'k--');
-            vline(ssd_mean,'r--'); vline(ssd_mean + executiveBeh.SSRT_integrationWeighted_all(session_i),'r:')
-            xlabel('Time from Target (ms)')
-            ylabel('Firing rate (z-score)')
-            title(['Neuron: ' int2str(neuron_i) ])
-            
-        catch
-            continue
-        end
-        
-    end
-    
-    filename = fullfile(dirs.root,'results','sdf_overview_figs',['sdf_saccade_overview_pg' int2str(page_i) '.pdf']);
-    set(fig_out,'PaperSize',[20 10]); %set the paper size to what you want
-    print(fig_out,filename,'-dpdf') % then print it
-    close(fig_out)
-end
-
-%% Analysis: Probe deviation from a baseline period during target onset period
 
 %% Figure: Population spike-density function for visual neurons
-clear input_sdf population_sdf
-input_sdf_canc = num2cell(sdf_target_canc_zscore(neuron_index.visual_pos,:), 2);
-input_sdf_nostop = num2cell(sdf_saccade_ns_zscore(neuron_index.visual_pos,:), 2);
-class_label = [repmat({'1_Canceled'},length(input_sdf_canc),1); repmat({'2_Nostop'},length(input_sdf_nostop),1)];
-% Produce the figure, collapsed across all monkeys
-population_sdf(1,1)=gramm('x',timewins.sdf,'y',[input_sdf_canc;input_sdf_nostop],'color',class_label);
-population_sdf(1,1).stat_summary();
-population_sdf(1,1).axe_property('XLim',[-200 800],'YLim',[-2 15]);
-population_sdf(1,1).set_names('x','Time from Target (ms)','y','FR (Z-score)');
+clear input_sdf* population_sdf
+input_sdf_target = num2cell(sdf_target_ns_zscore(neuron_index.visual_pos,:), 2);
+input_sdf_saccade = num2cell(sdf_saccade_ns_zscore(neuron_index.visual_pos,:), 2);
 
-pop_figure = figure('Renderer', 'painters', 'Position', [100 100 400 300]);
+% Produce the figure, collapsed across all monkeys
+population_sdf(1,1)=gramm('x',timewins.sdf,'y',input_sdf_target);
+population_sdf(1,2)=gramm('x',timewins.sdf,'y',input_sdf_saccade);
+population_sdf(1,1).stat_summary(); population_sdf(1,2).stat_summary();
+population_sdf(1,1).axe_property('XLim',[-200 800],'YLim',[-2 15]);
+population_sdf(1,2).axe_property('XLim',[-400 400],'YLim',[-2 15]);
+population_sdf(1,1).set_names('x','Time from Target (ms)','y','FR (Z-score)');
+population_sdf(1,2).set_names('x','Time from Saccade (ms)','y','FR (Z-score)');
+
+pop_figure = figure('Renderer', 'painters', 'Position', [100 100 800 300]);
 population_sdf.draw();
 
 % Once we're done with a page, save it and close it.
@@ -171,21 +133,31 @@ close(pop_figure)
 
 
 
+%% Analysis: Calculate visuomotor index
+neuronlist = []; neuronlist = neuron_index.visual_pos; n_neurons = length(neuronlist);
+clear visuomotor_*
+
+baseline_win = []; baseline_win = timewins.baseline_target + timewins.zero;
+target_win = []; target_win = timewins.visual_target + timewins.zero;
+saccade_win = []; saccade_win = [-100:100] + timewins.zero;
+
+    
+for neuronlist_i = 1:n_neurons
+    neuron_i = neuronlist(neuronlist_i);
+    fprintf('Extracting target aligned SDF for neuron %i of %i. \n',neuronlist_i, length(neuronlist))
+    
+    session_i = executiveBeh.neuronMatPosit(neuron_i,1);
+
+    % Target aligned activity
+    vmi_activity_target = nanmean(sdf_target_ns_raw(neuron_i,target_win));
+    % Target aligned activity
+    vmi_activity_saccade = nanmean(sdf_saccade_ns_raw(neuron_i,saccade_win));
+    
+    vmi_index(neuronlist_i) = (vmi_activity_saccade-vmi_activity_target)/(vmi_activity_saccade+vmi_activity_target);
+end
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+visuomotor_histogram = figure('Renderer', 'painters', 'Position', [100 100 300 300]); hold on
+histogram(vmi_index,-1:0.05:1,'LineStyle','None')
+xlabel('Visuomotor index'); ylabel('Frequency')
 

@@ -86,6 +86,10 @@ for neuronlist_i = 1:n_neurons
     
 end
 
+
+sum(visual_value.value_flag_onset == 1 & visual_value.VSI_onset > 0)
+sum(visual_value.value_flag_onset == 1 & visual_value.VSI_onset < 0)
+
 %% Figure: Histogram of value-sensitivity index
 vsi_histogram = figure('Renderer', 'painters', 'Position', [100 100 300 300]); hold on
 histogram(visual_value.VSI_onset(visual_value.value_flag_onset == 0),-0.6:0.05:0.6,'LineStyle','None')
@@ -128,3 +132,8 @@ filename = fullfile(dirs.root,'results','gen_figures','valuepop_figure_visual.pd
 set(value_pop_figure,'PaperSize',[20 10]); %set the paper size to what you want
 print(value_pop_figure,filename,'-dpdf') % then print it
 close(value_pop_figure)
+
+%% Organize: Save visual value data for future use.
+save(fullfile(dirs.root,'results','mat_files','visual_value.mat'),'visual_value')
+
+

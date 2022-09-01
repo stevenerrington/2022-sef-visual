@@ -1,5 +1,5 @@
 %{
-Value context encoding by of visually responsive neurons.
+Laterality encoding by of visually responsive neurons.
 2022-08-27 | S P Errington
 
 In this script, we will X, Y, and Z
@@ -86,6 +86,9 @@ for neuronlist_i = 1:n_neurons
     
 end
 
+sum(visual_lateral.lateral_flag_onset == 1 & visual_lateral.LSI_onset > 0)
+sum(visual_lateral.lateral_flag_onset == 1 & visual_lateral.LSI_onset < 0)
+
 %% Figure: Histogram of value-sensitivity index
 laterality_histogram = figure('Renderer', 'painters', 'Position', [100 100 300 300]); hold on
 histogram(visual_lateral.LSI_onset(visual_lateral.lateral_flag_onset == 0),-1:0.05:1,'LineStyle','None')
@@ -131,3 +134,6 @@ filename = fullfile(dirs.root,'results','gen_figures','lateralpop_figure_visual.
 set(lateral_pop_figure,'PaperSize',[20 10]); %set the paper size to what you want
 print(lateral_pop_figure,filename,'-dpdf') % then print it
 close(lateral_pop_figure)
+
+%% Organize: Save output
+save(fullfile(dirs.root,'results','mat_files','visual_lateral.mat'),'visual_lateral')

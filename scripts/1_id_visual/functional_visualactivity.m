@@ -2,8 +2,6 @@
 Functional properties of visually responsive neurons.
 2022-08-26 | S P Errington
 
-In this script, we will X, Y, and Z
-
 Dependencies: identify_visualactivity (neuron_index and visual_info
 variables).
 %}
@@ -19,6 +17,7 @@ neuron_index.visual_pos = neuron_index.visual(visual_info.visual_fac(neuron_inde
 neuron_index.visual_neg = neuron_index.visual(visual_info.visual_sup(neuron_index.visual) == 1);
 [~, latency_order_pos] = sort(visual_info.cd_detect_onset(neuron_index.visual_pos),'ascend');
 [~, latency_order_neg] = sort(visual_info.cd_detect_onset(neuron_index.visual_neg),'descend');
+save(fullfile(dirs.root,'results','mat_files','neuron_index.mat'),'neuron_index')
 
 neuron_order = [neuron_index.visual_pos(latency_order_pos); neuron_index.visual_neg(latency_order_neg)];
 
@@ -131,6 +130,8 @@ print(cdf_fig,filename,'-dpdf') % then print it
 close(cdf_fig)
 
 %% Analysis: Compare onset time between neuron classes
+
+% ! % ! % !
 
 
 %% Figure: Example neuron

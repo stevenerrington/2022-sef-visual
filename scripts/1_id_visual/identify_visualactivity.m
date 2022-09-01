@@ -18,18 +18,22 @@ curation (in the results folder), and will give the index of visual neurons
 parfor neuron_i = 1:575
     fprintf('Extracting target aligned SDF for neuron %i of %i. \n',neuron_i, 575)
     
+    % Get the corresponding session for the neuron
     session_i = executiveBeh.neuronMatPosit(neuron_i,1);
     
+    % Load in pre-processed SDF
     spk_in = load(fullfile(dirs.data_spike,['SDF_' int2str(neuron_i)]));
     
+    % Define input trials and windows
     trial_in = []; trial_in = executiveBeh.ttx.GO{session_i};
     baseline_win = []; baseline_win = timewins.baseline_target + timewins.zero;
     target_win = []; target_win = timewins.visual_target + timewins.zero;
     
+    % Get baseline mean and std for z-score
     fr_visual_baseline_mean = nanmean(nanmean(spk_in.SDF.target(trial_in,baseline_win)));
     fr_visual_baseline_std = nanstd(nanmean(spk_in.SDF.target(trial_in,baseline_win)));
     
-    
+    % Get the mean SDF on no-stop trials.
     if fr_visual_baseline_std == 0
         sdf_visual_raw(neuron_i,:) = nan(1,length(timewins.sdf));
         sdf_visual_zscore(neuron_i,:) = nan(1,length(timewins.sdf));
@@ -301,6 +305,17 @@ neuron_index.visual = find(visual_info.visual_flag == 1 & ...
     ~isnan(visual_info.cd_detect_onset));
 
 neuron_index.nonvisual = find(~ismember(1:575,neuron_index.visual));
+
+
+%% Figure: Plot histogram of spike widths
+spkwidth_figure = figure('Renderer', 'painters', 'Position', [100 100 400 200]);
+histogram(executiveBeh.bioInfo.spkWidth*25,0:25:800,'LineStyle','None')
+vline(250,'k--')
+% Once we're done with a page, save it and close it.
+filename = fullfile(dirs.root,'results','gen_figures','spkwidth_histogram.pdf');
+set(spkwidth_figure,'PaperSize',[20 10]); %set the paper size to what you want
+print(spkwidth_figure,filename,'-dpdf') % then print it
+close(spkwidth_figure)
 
 %% Organize: output data
 save(fullfile(dirs.root,'results','mat_files','neuron_index.mat'),'neuron_index')

@@ -96,7 +96,6 @@ histogram(visual_value.VSI_onset(visual_value.value_flag_onset == 0),-0.6:0.05:0
 histogram(visual_value.VSI_onset(visual_value.value_flag_onset == 1),-0.6:0.05:0.6,'LineStyle','None')
 xlabel('Value-sensitivity index'); ylabel('Frequency')
 
-
 % Once we're done with a page, save it and close it.
 filename = fullfile(dirs.root,'results','gen_figures','vsi_histogram_visual.pdf');
 set(vsi_histogram,'PaperSize',[20 10]); %set the paper size to what you want

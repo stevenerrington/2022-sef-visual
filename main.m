@@ -110,7 +110,17 @@ Explore the laminar distribution of visually-responsive neurons in SEF
     x ID visual facilitated neurons in perpendicular SEF penetrations
     x Plot time-depth plot of visual neurons aligned on target and saccade.
     x Look at the distriubtion of LSI through depth.
-
-! NOTE: THIS CODE NEEDS COMMENTING/TIDYING
 %}
+
 laminar_visual;
+
+
+
+
+
+
+
+
+
+
+

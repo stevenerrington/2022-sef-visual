@@ -141,6 +141,7 @@ neuron_index.example_vis_sup = 13;
 neuron_plot_list = [neuron_index.example_vis_fac, neuron_index.example_vis_sup];
 ylim_list = [60 60];
 
+clear example_sdf
 for neuron_loop_i = 1:length(neuron_plot_list)
     neuron_i = neuron_plot_list(neuron_loop_i);
     fprintf('Extracting target aligned SDF for neuron %i of %i. \n',neuron_i, 575)
@@ -148,6 +149,7 @@ for neuron_loop_i = 1:length(neuron_plot_list)
     session_i = executiveBeh.neuronMatPosit(neuron_i,1);
     
     spk_in = load(fullfile(dirs.data_spike,['SDF_' int2str(neuron_i)]));
+    spktimes_in = load(fullfile(dirs.data_spike,['Spikes_' int2str(neuron_i)]));
     
     trial_in = []; trial_in = executiveBeh.ttx.GO{session_i}; trial_n = length(trial_in);
     baseline_win = []; baseline_win = timewins.baseline_target + timewins.zero;
@@ -158,18 +160,24 @@ for neuron_loop_i = 1:length(neuron_plot_list)
     for trial_loop_i = 1:trial_n
         trial_i = trial_in(trial_loop_i);
         example_sdf_visual_raw{trial_loop_i,:} = spk_in.SDF.target(trial_i,:);
+        example_spktimes_visual_raw{trial_loop_i,:} = find(spktimes_in.Spikes.target(trial_i,:) == 1) - timewins.zero;
     end
     
-    % Produce the figure, collapsed across all monkeys
-    example_sdf(neuron_loop_i,1)=gramm('x',timewins.sdf,'y',example_sdf_visual_raw);
-    example_sdf(neuron_loop_i,1).stat_summary();
-    example_sdf(neuron_loop_i,1).axe_property('XLim',[-200 500],...
+    % Produce the raster
+    example_sdf(1,neuron_loop_i)=gramm('x',example_spktimes_visual_raw);
+    example_sdf(1,neuron_loop_i).geom_raster()
+    example_sdf(1,neuron_loop_i).axe_property('XLim',[-200 500]); 
+    
+    % Produce the SDF figure
+    example_sdf(2,neuron_loop_i)=gramm('x',timewins.sdf,'y',example_sdf_visual_raw);
+    example_sdf(2,neuron_loop_i).stat_summary();
+    example_sdf(2,neuron_loop_i).axe_property('XLim',[-200 500],...
         'YLim',[20 ylim_list(neuron_loop_i)]);
-    example_sdf(neuron_loop_i,1).geom_vline('XIntercept',visual_info.cd_detect_onset(neuron_i));
-    example_sdf(neuron_loop_i,1).set_names('x','Time from Target (ms)','y','FR (spk/sec)');
+    example_sdf(2,neuron_loop_i).geom_vline('XIntercept',visual_info.cd_detect_onset(neuron_i));
+    example_sdf(2,neuron_loop_i).set_names('x','Time from Target (ms)','y','FR (spk/sec)');
     
 end
-example_sdf_out = figure('Renderer', 'painters', 'Position', [100 100 300 300]);
+example_sdf_out = figure('Renderer', 'painters', 'Position', [100 100 700 300]);
 example_sdf.draw();
 
 % Once we're done with a page, save it and close it.

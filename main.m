@@ -76,6 +76,18 @@ identify_motoractivity
 
 %{
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Compare the latency of our neuronal sample with those in other cortical and
+ subcortical areas.
+- This script will:
+    x Import latencies derived from other neurons (Schmolesky et al., 1998)
+    x Calculate CDF of onset latencies.
+    x Plot CDF and boxplot of these latencies
+%}
+
+compare_latency;
+
+%{
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Determine whether these neurons are moderated by value context 
 - This script will:
     x Generate SDFs for no-stop trials, split by low and high reward

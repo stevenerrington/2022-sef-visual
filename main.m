@@ -11,7 +11,7 @@ donut function (in src folder)
 %% Setup workspace %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 clear all; clc
 % Get directories %%%%%%%%%%%%%%%%%%%%%%%%
-user = 'erringsp_WH633'; % erringsp
+user = 'erringsp'; % erringsp
 dirs = setup_dirs(user);
 
 % Define windows %%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -60,6 +60,7 @@ Explore the functional features of visual related neurons
 %}
 
 functional_visualactivity
+
 %{ 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Determine whether these neurons have motor features

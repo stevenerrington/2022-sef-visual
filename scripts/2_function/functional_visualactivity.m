@@ -112,6 +112,7 @@ CDF_onset.vis_sup_narrow = getCDF(visual_info.cd_detect_onset(neuron_index.vis_s
 CDF_onset.vis_sup_broad = getCDF(visual_info.cd_detect_onset(neuron_index.vis_sup_broad));
 CDF_onset.vis_all_narrow = getCDF(visual_info.cd_detect_onset([neuron_index.vis_fac_narrow;neuron_index.vis_sup_narrow]));
 CDF_onset.vis_all_broad = getCDF(visual_info.cd_detect_onset([neuron_index.vis_fac_broad;neuron_index.vis_sup_broad]));
+CDF_onset.vis_fac_all = getCDF(visual_info.cd_detect_onset([neuron_index.vis_fac_broad;neuron_index.vis_fac_narrow]));
 
 clear cdf_fig_data cdf_fig_label cdf_fig_label_spikewidth
 cdf_fig_data = [CDF_onset.vis_all_narrow; CDF_onset.vis_all_broad];
@@ -165,7 +166,7 @@ for neuron_loop_i = 1:length(neuron_plot_list)
     
     % Produce the raster
     example_sdf(1,neuron_loop_i)=gramm('x',example_spktimes_visual_raw);
-    example_sdf(1,neuron_loop_i).geom_raster()
+    example_sdf(1,neuron_loop_i).geom_raster();
     example_sdf(1,neuron_loop_i).axe_property('XLim',[-200 500]); 
     
     % Produce the SDF figure
@@ -193,6 +194,28 @@ session_label = FileNames{executiveBeh.neuronMatPosit(neuron_plot_list,1)};
 %% Organize: Save updated visual neuron categories.
 save(fullfile(dirs.root,'results','mat_files','neuron_index.mat'),'neuron_index')
 
+
+%% Analysis: Get latencies
+
+fprintf('Min onset: %.2f ms \n',min(CDF_onset.vis_fac_all(:,1)))
+fprintf('Max onset: %.2f ms \n',max(CDF_onset.vis_fac_all(:,1)))
+fprintf('Mean (+/- SEM) onset: %.2f +/-  %.2f ms \n', mean(CDF_onset.vis_fac_all(:,1)), sem(CDF_onset.vis_fac_all(:,1)))
+fprintf('50th percentile: %.2f ms \n',quantile(CDF_onset.vis_fac_all(:,1), [0.5]))
+fprintf('75th percentile: %.2f ms \n',quantile(CDF_onset.vis_fac_all(:,1), [0.75]))
+
+
+fprintf('Broad mean onset: %.2f ms \n',mean(CDF_onset.vis_fac_broad(:,1)))
+fprintf('Broad sem onset: %.2f ms \n',sem(CDF_onset.vis_fac_broad(:,1)))
+fprintf('Narrow mean onset: %.2f ms \n',mean(CDF_onset.vis_fac_narrow(:,1)))
+fprintf('Narrow sem onset: %.2f ms \n',sem(CDF_onset.vis_fac_narrow(:,1)))
+
+
+[~,p,~,stat] = ttest2(CDF_onset.vis_fac_broad(:,1),CDF_onset.vis_fac_narrow(:,1));
+
+fprintf('t(%.0f) = %.3f, p = %.3f    \n',stat.df, stat.tstat, p)
+
+fprintf('N Transient Neurons: %.0f  \n',...
+    sum((visual_info.cd_detect_offset(neuron_index.visual_pos)-visual_info.cd_detect_onset(neuron_index.visual_pos)) < 100))
 
 
 

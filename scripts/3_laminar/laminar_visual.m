@@ -191,6 +191,7 @@ for obs_i = 1:length(figure_neuronIdx)
     figure_monkey{obs_i,1} = executiveBeh.nhpSessions.monkeyNameLabel{executiveBeh.neuronMatPosit(figure_neuronIdx(obs_i),1)};
 end
 
+
 laminar_vsi_lsi_figure_out = figure('Renderer', 'painters', 'Position', [100 100 800 400]);
 laminar_vsi_lsi_figure= gramm('x',figure_layer,'y',figure_index);
 laminar_vsi_lsi_figure(1,1).stat_summary('type','sem','geom',{'point','errorbar'});
@@ -199,25 +200,131 @@ laminar_vsi_lsi_figure.facet_grid(figure_monkey,figure_measure);
 laminar_vsi_lsi_figure.axe_property('YLim',[-0.35 0.35]);
 laminar_vsi_lsi_figure.draw();
 
-%%
+laminar_lsi_vsi_table = table(figure_neuronIdx,figure_flag,figure_index,figure_layer,figure_measure);
+writetable(laminar_lsi_vsi_table,fullfile(dirs.root,'results','jasp_tables','laminar_vsi_lsi_table.csv'),'WriteRowNames',true)
+
+
+
+%% Figure: Histogram of lateral neuron distribution across depths
 lsi_contra_neuron_depths = timedepth_table.depth_ch(timedepth_table.ls_flag == 1 & timedepth_table.ls_index > 0);
 lsi_ipsi_neuron_depths = timedepth_table.depth_ch(timedepth_table.ls_flag == 1 & timedepth_table.ls_index < 0);
+
+lsi_contra_neuron_spkwidth = timedepth_table.spkwidth(timedepth_table.ls_flag == 1 & timedepth_table.ls_index > 0);
+lsi_ipsi_neuron_spkwidth = timedepth_table.spkwidth(timedepth_table.ls_flag == 1 & timedepth_table.ls_index < 0);
 
 lsi_contra_neuron_all_depths = timedepth_table.depth_ch(timedepth_table.ls_index > 0);
 lsi_ipsi_neuron_all_depths = timedepth_table.depth_ch(timedepth_table.ls_index < 0);
 
+lsi_contra_neuron_all_spkwidth = timedepth_table.spkwidth(timedepth_table.ls_index > 0);
+lsi_ipsi_neuron_all_spkwidth = timedepth_table.spkwidth(timedepth_table.ls_index < 0);
+
 test = figure('Renderer', 'painters', 'Position', [100 100 500 300]);
-subplot(2,1,1); hold on
+subplot(2,2,1); hold on
 histogram(lsi_contra_neuron_depths,1:1:19);
 histogram(lsi_ipsi_neuron_depths,1:1:19);
 vline(mode(lsi_contra_neuron_depths),'b-'); vline(mode(lsi_ipsi_neuron_depths),'r-')
 
-subplot(2,1,2); hold on
+subplot(2,2,3); hold on
 histogram(lsi_contra_neuron_all_depths,1:1:19);
 histogram(lsi_ipsi_neuron_all_depths,1:1:19);
 vline(mode(lsi_contra_neuron_all_depths),'b-'); vline(mode(lsi_ipsi_neuron_all_depths),'r-')
 
+subplot(2,2,2); hold on
+histogram(lsi_contra_neuron_spkwidth,0:25:700);
+histogram(lsi_ipsi_neuron_spkwidth,0:25:700);
+
+subplot(2,2,4); hold on
+histogram(lsi_contra_neuron_all_spkwidth,0:25:700);
+histogram(lsi_ipsi_neuron_all_spkwidth,0:25:700);
 
 
+%% Analysis: Number of neurons across layers
+
+for laminar_i = 1:4
+    laminar_neuron_visual_idx = []; laminar_neuron_all_idx =[];
+    laminar_neuron_visual_idx = find(ismember(timedepth_table.depth_ch,depth_layer_alignment.(layer_labels{laminar_i})));
+    laminar_neuron_all_idx = find(ismember(executiveBeh.bioInfo.depthInfo(283:end),depth_layer_alignment.(layer_labels{laminar_i})));
+    
+    n_count_depth(laminar_i,:) = [length(laminar_neuron_visual_idx), ...
+        length(laminar_neuron_all_idx)-length(laminar_neuron_visual_idx)];
+end
+
+laminar_chi_table = ...
+    table(n_count_depth(:,1),n_count_depth(:,2),'VariableNames',{'Visual','Nonvisual'},...
+    'RowNames',{'L2','L3','L5','L6'});
 
 
+%% Analysis: Number of neurons across layers (split by laterality)
+
+for laminar_i = 1:4
+    laminar_neuron_visual_ipsi_idx = []; laminar_neuron_visual_contra_idx =[];
+    laminar_neuron_visual_ipsi_idx = find(ismember(timedepth_table.depth_ch(timedepth_table.ls_index < 0),...
+        depth_layer_alignment.(layer_labels{laminar_i})));
+    laminar_neuron_visual_contra_idx = find(ismember(timedepth_table.depth_ch(timedepth_table.ls_index > 0),...
+        depth_layer_alignment.(layer_labels{laminar_i})));
+    
+    n_count_lsi_depth(laminar_i,:) = [length(laminar_neuron_visual_ipsi_idx), length(laminar_neuron_visual_contra_idx)];
+end
+
+laminar_chi_lateral_table = ...
+    table(n_count_lsi_depth(:,1),n_count_lsi_depth(:,2),'VariableNames',{'Ipsi','Contra'},...
+    'RowNames',{'L2','L3','L5','L6'});
+
+
+%% Analysis: Number of neurons x spk width (split by laterality)
+sum(lsi_contra_neuron_all_spkwidth < 250)
+sum(lsi_contra_neuron_all_spkwidth > 249)
+
+sum(lsi_ipsi_neuron_all_spkwidth < 250)
+sum(lsi_ipsi_neuron_all_spkwidth > 249)
+
+spkwidth_chi_lateral_table = ...
+    table([sum(lsi_contra_neuron_all_spkwidth < 249); sum(lsi_contra_neuron_all_spkwidth > 249)],...
+    [sum(lsi_ipsi_neuron_all_spkwidth < 249); sum(lsi_ipsi_neuron_all_spkwidth > 249)],...
+    'VariableNames',{'Contra','Ipsi'},...
+    'RowNames',{'Narrow','Broad'});
+
+
+%% Figure: Onset & offset latency across depth
+epoch_labels = {'1_Onset','2_Offset'};
+figure_epoch = [];
+figure_layer = [];
+figure_neuronIdx = [];
+figure_latency = [];
+
+for laminar_i = 1:4
+    for epoch_i = 1:2
+        laminar_neuron_idx = [];
+        laminar_neuron_idx = find(ismember(timedepth_table.depth_ch,depth_layer_alignment.(layer_labels{laminar_i})));
+        
+        figure_epoch = [figure_epoch; repmat(epoch_labels(epoch_i),length(laminar_neuron_idx),1)];
+        figure_layer   = [figure_layer; repmat(layer_labels(laminar_i),length(laminar_neuron_idx),1)];
+        figure_neuronIdx = [figure_neuronIdx; laminar_neuron_idx];
+        
+        if epoch_i == 1
+            figure_latency = [figure_latency; timedepth_table.mod_onset_target(laminar_neuron_idx)];
+        else
+            figure_latency = [figure_latency; timedepth_table.mod_offset_saccade(laminar_neuron_idx)];
+        end
+        
+    end
+end
+
+figure_monkey= {};
+
+for obs_i = 1:length(figure_neuronIdx)
+    figure_monkey{obs_i,1} = executiveBeh.nhpSessions.monkeyNameLabel{executiveBeh.neuronMatPosit(figure_neuronIdx(obs_i),1)};
+end
+
+clear laminar_latency_figure
+laminar_latency_figure_out = figure('Renderer', 'painters', 'Position', [100 100 600 300]);
+laminar_latency_figure(1,1) = gramm('x',figure_layer,'y',figure_latency,'subset',strcmp(figure_epoch,'1_Onset'));
+laminar_latency_figure(1,2) = gramm('x',figure_layer,'y',figure_latency,'subset',strcmp(figure_epoch,'2_Offset'));
+laminar_latency_figure(1,1).stat_summary('type','sem','geom',{'point','errorbar'});
+laminar_latency_figure(1,2).stat_summary('type','sem','geom',{'point','errorbar'});
+laminar_latency_figure(1,1).axe_property('YLim',[75 150]);
+laminar_latency_figure(1,2).axe_property('YLim',[0 600]);
+laminar_latency_figure.draw();
+
+laminar_latency_table = table(figure_neuronIdx,figure_epoch,figure_layer,figure_latency);
+writetable(laminar_latency_table,fullfile(dirs.root,'results','jasp_tables','laminar_latency_table.csv'),'WriteRowNames',true)

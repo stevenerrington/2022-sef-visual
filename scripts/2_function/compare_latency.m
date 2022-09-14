@@ -70,3 +70,24 @@ filename = fullfile(dirs.root,'results','gen_figures','boxplot_onset_areas.pdf')
 set(figure_uOnset_area_pdf,'PaperSize',[20 10]); %set the paper size to what you want
 print(figure_uOnset_area_pdf,filename,'-dpdf') % then print it
 close(figure_uOnset_area_pdf)
+
+%% Analysis: Compare latencies between monkeys
+monkey_visual_latency_comp = ...
+    table(neuron_index.visual_pos,...
+    visual_info.cd_detect_onset(neuron_index.visual_pos),...
+    visual_info.monkey_label(neuron_index.visual_pos),...
+    'VariableNames',{'Neuron','Onset','Monkey'});
+
+eu_onset = []; x_onset = [];
+eu_onset = monkey_visual_latency_comp.Onset(strcmp(monkey_visual_latency_comp.Monkey,'Euler'));
+x_onset = monkey_visual_latency_comp.Onset(strcmp(monkey_visual_latency_comp.Monkey,'Xena'));
+
+[~,p,~,stat] = ttest2(eu_onset,x_onset);
+
+fprintf('t(%.0f) = %.3f, p = %.3f    \n',stat.df, stat.tstat, p);
+
+fprintf('Mean (+/- SEM) onset (Euler): %.2f +/-  %.2f ms \n',...
+    mean(eu_onset), sem(eu_onset))
+
+fprintf('Mean (+/- SEM) onset (Xena): %.2f +/-  %.2f ms \n',...
+    mean(x_onset), sem(x_onset))

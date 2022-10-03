@@ -158,7 +158,46 @@ set(timedepth_fig,'PaperSize',[20 10]); %set the paper size to what you want
 print(timedepth_fig,filename,'-dpdf') % then print it
 close(timedepth_fig)
 
-%% Analysis: LSI x Depth - IN PROGRESS
+
+%% Analysis: Latency x Depth
+depth_layer_alignment.l2 = [1:4];
+depth_layer_alignment.l3 = [5:8];
+depth_layer_alignment.l5 = [9:13];
+depth_layer_alignment.l6 = [14:19];
+
+layer_labels = fieldnames(depth_layer_alignment);
+
+figure_layer = [];
+figure_latency = [];
+figure_neuronIdx = [];
+figure_monkey = {};
+
+for laminar_i = 1:4
+    laminar_neuron_idx = [];
+    laminar_neuron_idx = find(ismember(timedepth_table.depth_ch,depth_layer_alignment.(layer_labels{laminar_i})));
+    
+    figure_layer   = [figure_layer; repmat(layer_labels(laminar_i),length(laminar_neuron_idx),1)];
+    figure_latency   = [figure_latency; timedepth_table.mod_onset_target(laminar_neuron_idx)];
+    figure_neuronIdx = [figure_neuronIdx; laminar_neuron_idx];
+end
+
+
+for obs_i = 1:length(figure_neuronIdx)
+    figure_monkey{obs_i,1} = executiveBeh.nhpSessions.monkeyNameLabel...
+        {executiveBeh.neuronMatPosit(timedepth_table.neuron_i(figure_neuronIdx(obs_i),1))};
+end
+
+clear laminar_latency_figure
+laminar_latency_figure = figure('Renderer', 'painters', 'Position', [100 100 500 300]);
+laminar_latency_figure= gramm('x',figure_layer,'y',figure_latency);
+laminar_latency_figure(1,1).stat_summary('type','sem','geom',{'point','errorbar','line'});
+laminar_latency_figure.geom_hline('yintercept',0); 
+laminar_latency_figure.facet_grid([],[]); 
+laminar_latency_figure.axe_property('YLim',[75 150]); 
+laminar_latency_figure.draw();
+
+
+%% Analysis: Laterality & Visual Index x Depth - IN PROGRESS
 
 depth_layer_alignment.l2 = [1:4];
 depth_layer_alignment.l3 = [5:8];
@@ -183,20 +222,26 @@ for laminar_i = 1:4
         figure_layer   = [figure_layer; repmat(layer_labels(laminar_i),length(laminar_neuron_idx),1)];
         figure_index   = [figure_index; timedepth_table.([measure_labels{measure_i} '_index'])(laminar_neuron_idx)];
         figure_flag    = [figure_flag; timedepth_table.([measure_labels{measure_i} '_flag'])(laminar_neuron_idx)];
-        figure_neuronIdx = [figure_neuronIdx; laminar_neuron_idx];
+        figure_neuronIdx = [figure_neuronIdx; timedepth_table.neuron_i(laminar_neuron_idx)];
     end
 end
 
 for obs_i = 1:length(figure_neuronIdx)
-    figure_monkey{obs_i,1} = executiveBeh.nhpSessions.monkeyNameLabel{executiveBeh.neuronMatPosit(figure_neuronIdx(obs_i),1)};
+    figure_monkey{obs_i,1} = executiveBeh.nhpSessions.monkeyNameLabel...
+        {executiveBeh.neuronMatPosit(figure_neuronIdx(obs_i),1)};
 end
 
+<<<<<<< Updated upstream
 
 laminar_vsi_lsi_figure_out = figure('Renderer', 'painters', 'Position', [100 100 800 400]);
+=======
+clear laminar_vsi_lsi_figure
+laminar_vsi_lsi_figure_out = figure('Renderer', 'painters', 'Position', [100 100 400 300]);
+>>>>>>> Stashed changes
 laminar_vsi_lsi_figure= gramm('x',figure_layer,'y',figure_index);
 laminar_vsi_lsi_figure(1,1).stat_summary('type','sem','geom',{'point','errorbar'});
 laminar_vsi_lsi_figure.geom_hline('yintercept',0); 
-laminar_vsi_lsi_figure.facet_grid(figure_monkey,figure_measure); 
+% laminar_vsi_lsi_figure.facet_grid(figure_measure,figure_monkey); 
 laminar_vsi_lsi_figure.axe_property('YLim',[-0.35 0.35]);
 laminar_vsi_lsi_figure.draw();
 
@@ -316,6 +361,7 @@ for obs_i = 1:length(figure_neuronIdx)
     figure_monkey{obs_i,1} = executiveBeh.nhpSessions.monkeyNameLabel{executiveBeh.neuronMatPosit(figure_neuronIdx(obs_i),1)};
 end
 
+<<<<<<< Updated upstream
 clear laminar_latency_figure
 laminar_latency_figure_out = figure('Renderer', 'painters', 'Position', [100 100 600 300]);
 laminar_latency_figure(1,1) = gramm('x',figure_layer,'y',figure_latency,'subset',strcmp(figure_epoch,'1_Onset'));
@@ -328,3 +374,34 @@ laminar_latency_figure.draw();
 
 laminar_latency_table = table(figure_neuronIdx,figure_epoch,figure_layer,figure_latency);
 writetable(laminar_latency_table,fullfile(dirs.root,'results','jasp_tables','laminar_latency_table.csv'),'WriteRowNames',true)
+=======
+%%
+
+vsi_lo_neuron_depths = timedepth_table.depth_ch(timedepth_table.vs_flag == 1 & timedepth_table.vs_index > 0);
+vsi_hi_neuron_depths = timedepth_table.depth_ch(timedepth_table.vs_flag == 1 & timedepth_table.vs_index < 0);
+
+vsi_lo_neuron_all_depths = timedepth_table.depth_ch(timedepth_table.vs_index > 0);
+vsi_hi_neuron_all_depths = timedepth_table.depth_ch(timedepth_table.vs_index < 0);
+
+test = figure('Renderer', 'painters', 'Position', [100 100 500 300]);
+subplot(2,1,1); hold on
+histogram(vsi_lo_neuron_depths,1:1:19);
+histogram(vsi_hi_neuron_depths,1:1:19);
+vline(mode(vsi_lo_neuron_depths),'b-'); vline(mode(vsi_hi_neuron_depths),'r-')
+
+subplot(2,1,2); hold on
+histogram(vsi_lo_neuron_all_depths,1:1:19);
+histogram(vsi_hi_neuron_depths,1:1:19);
+vline(mode(vsi_lo_neuron_depths),'b-'); vline(mode(vsi_hi_neuron_depths),'r-')
+
+
+
+
+
+
+
+
+
+
+
+>>>>>>> Stashed changes

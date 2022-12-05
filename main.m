@@ -11,7 +11,7 @@ donut function (in src folder)
 %% Setup workspace %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 clear all; clc
 % Get directories %%%%%%%%%%%%%%%%%%%%%%%%
-user = 'erringsp'; % erringsp
+user = 'erringsp_WH633'; % erringsp
 dirs = setup_dirs(user);
 
 % Define windows %%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -127,8 +127,13 @@ Explore the laminar distribution of visually-responsive neurons in SEF
 
 laminar_visual;
 
+%{
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Investigate the current-source-density of the visual-responsive in SEF
 
+%}
 
+laminar_visual;
 
 
 

@@ -70,6 +70,9 @@ td_plot_array_saccade = zeros(n_depths,length(td_plot_win_saccade));
 % each neuron with a one. This will add, so that each neuron at a depth and
 % time adds a "1" value.
 
+timedepth_table_lateral_L = timedepth_table(timedepth_table.ls_flag == 1 &&...
+    timedepth_table.ls_index > 0,:)
+
 for neuronlist_i = 1:length(neuronlist) 
     % Get the depth
     depth = timedepth_table.depth_ch(neuronlist_i);
@@ -231,13 +234,7 @@ for obs_i = 1:length(figure_neuronIdx)
         {executiveBeh.neuronMatPosit(figure_neuronIdx(obs_i),1)};
 end
 
-<<<<<<< Updated upstream
 
-laminar_vsi_lsi_figure_out = figure('Renderer', 'painters', 'Position', [100 100 800 400]);
-=======
-clear laminar_vsi_lsi_figure
-laminar_vsi_lsi_figure_out = figure('Renderer', 'painters', 'Position', [100 100 400 300]);
->>>>>>> Stashed changes
 laminar_vsi_lsi_figure= gramm('x',figure_layer,'y',figure_index);
 laminar_vsi_lsi_figure(1,1).stat_summary('type','sem','geom',{'point','errorbar'});
 laminar_vsi_lsi_figure.geom_hline('yintercept',0); 

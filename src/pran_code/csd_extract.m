@@ -1,14 +1,17 @@
 
+%% Setup: Load pre-processed data
 % Load in pre-processed data
 load(fullfile(dirs.root,'src','pran_code','FileNames.mat'));
 load(fullfile(dirs.root,'src','pran_code','executiveBeh.mat'));
 load(fullfile(dirs.root,'src','pran_code','ChannelDepthMap.mat'));
 load(fullfile(dirs.root,'src','pran_code','piadepth_gray.mat'));
 
+%% Setup: Define parameters
 Windowtgt=[-200 200];
 Windowbl= [-200 0]; %baseline window includes pretarget ramping?
 
-for perp_session_i=1:6 %perpendicular recording sessions 1:6 euler; 7:16 xena
+%% Extract: Load in LFP data and extract CSD
+for perp_session_i=1:16 %perpendicular recording sessions 1:6 euler; 7:16 xena
     fprintf('Analysing session %s  | (%i)    \n',FileNames{perp_session_i+13}, perp_session_i)
     
     % Load in relevant data files
@@ -23,6 +26,10 @@ for perp_session_i=1:6 %perpendicular recording sessions 1:6 euler; 7:16 xena
     % Get depth alignment 
     DepthAlignment = [min(ChannelDepthMap.GrayMatterMapping{perp_session_i+13,1}) max(ChannelDepthMap.GrayMatterMapping{perp_session_i+13,1})];
     LFPdata_depth = LFPdata_raw(:,DepthAlignment(1):DepthAlignment(2));
+    
+    % I considered a filter here?
+    %fLFP = SEF_LFP_Filter(inputLFP ,lowerBand ,upperBand ,samplingFreq)
+    
     
     for trial_type_i=1:2
 
@@ -91,36 +98,87 @@ for perp_session_i=1:6 %perpendicular recording sessions 1:6 euler; 7:16 xena
     end
 end
 
+%% Figures: Plot CSD for ipsi, contra, and difference
+load('csd_data')
 
-%%
-figure (1)
-tspan = -200:200;
-font = 9;
-CSDdiff=(nanmean(perpCSD.Left.CSD,3)-nanmean(perpCSD.Right.CSD,3));
-CSDdiff=smoothdata(CSDdiff,'gaussian',10);
+% Parameters --------------------------------------------------
+params.plot.time = -200:200;
+params.plot.gauss_smooth = 10;
+params.plot.color_csd_max = 75;
 
-imagesc(tspan, piadepth_gray, CSDdiff);
-c = colorbar;
-colormap(flip(jet));
+% Data --------------------------------------------------
+figure_data.csd.left = perpCSD.Left.CSD(1:160,:,:);
+figure_data.csd.right = perpCSD.Right.CSD(1:160,:,:);
 
-bar_max = 100; %Xe
-bar_min = -bar_max;
-caxis([bar_min bar_max]);
-c.Label.FontSize = font+2;
-c.FontSize = font+2;
-c.FontWeight = 'bold';
-c.Ticks = [bar_min 0 bar_max];
-% c.TickLabels = {'-350', '', '+350'};
-c.LineWidth = 1;
-ax = gca;
-ax.FontSize = font;
-xticks([-200 -150 -100 -50 0 50 100 150 200])
-xticklabels({'-200','-150','-100','-50', '0', '50', '100', '150', '200'});
-xlim([-200 200])
-ylabel('Depth (mm)')
-xlabel('Time from target array onset')
-set(ax,'fontweight','bold','FontSize',9,'LineWidth',2)
-xline(0,'LineWidth',3);
-set(gcf, 'Position', get(0, 'Screensize'));
-xlim([-50 200])
-axis square
+for perp_session_i = 1:16
+    
+    figure_data.csd.diff(:,:,perp_session_i)=...
+        figure_data.csd.left(:,:,perp_session_i)-...
+        figure_data.csd.right(:,:,perp_session_i);
+    
+end
+
+% Generate --------------------------------------------------
+figure('Renderer', 'painters', 'Position', [100 100 750 500]);
+ax1 = subplot(1,3,1);
+imagesc(params.plot.time, piadepth_gray, smoothdata(nanmean(figure_data.csd.left,3),'gaussian',params.plot.gauss_smooth));
+ax1_c = colorbar; colormap(flipud(bluewhitered)); caxis([-bar_max bar_max]);
+vline(0,'k'); hline(median(piadepth_gray),'k--'), xlim([-50 200])
+
+ax2 = subplot(1,3,2);
+imagesc(params.plot.time, piadepth_gray, smoothdata(nanmean(figure_data.csd.right,3),'gaussian',params.plot.gauss_smooth));
+ax2_c = colorbar; colormap(flipud(bluewhitered)); caxis([-bar_max bar_max]);
+vline(0,'k'); hline(median(piadepth_gray),'k--'), xlim([-50 200])
+
+ax3 = subplot(1,3,3);
+imagesc(params.plot.time, piadepth_gray, smoothdata(nanmean(figure_data.csd.diff,3),'gaussian',params.plot.gauss_smooth));
+ax3_c = colorbar; colormap(flipud(bluewhitered)); caxis([-35 35]);
+vline(0,'k'); hline(median(piadepth_gray),'k--'), xlim([-50 200])
+
+% Format --------------------------------------------------
+set([ax1 ax2 ax3],'FontSize',9,'LineWidth',1,...
+    'xtick',[-200 -100 0 100 200],...
+    'xticklabels',{'-200','-100', '0',  '100', '200'},...
+    'ytick',[],...
+    'xlim',[-50 200],'ylim', [0 max(piadepth_gray)])
+
+ax1_c.FontSize = 9;
+ax1_c.Ticks = [-params.plot.color_csd_max 0 params.plot.color_csd_max];
+ax1_c.LineWidth = 1;
+
+ax2_c.FontSize = 9;
+ax2_c.Ticks = [-params.plot.color_csd_max 0 params.plot.color_csd_max];
+ax2_c.LineWidth = 1;
+
+ax3_c.FontSize = 9;
+ax3_c.Ticks = [-35 0 35];
+ax3_c.LineWidth = 1;
+
+%% Analysis
+csd_mean_analysis_window = 200+[100:200];
+% Extract mean CSD values in a given window
+for perp_session_i = 1:16
+    
+    csd_mean_analysis.l2(perp_session_i,1) = nanmean(nanmean(figure_data.csd.diff([1:40],csd_mean_analysis_window,perp_session_i)));
+    csd_mean_analysis.l3(perp_session_i,1) = nanmean(nanmean(figure_data.csd.diff([41:80],csd_mean_analysis_window,perp_session_i)));
+    csd_mean_analysis.l5(perp_session_i,1) = nanmean(nanmean(figure_data.csd.diff([81:120],csd_mean_analysis_window,perp_session_i)));
+    csd_mean_analysis.l6(perp_session_i,1) = nanmean(nanmean(figure_data.csd.diff([121:160],csd_mean_analysis_window,perp_session_i)));
+    
+end
+
+csd_mean_datain = [csd_mean_analysis.l2; csd_mean_analysis.l3; csd_mean_analysis.l5; csd_mean_analysis.l6];
+csd_mean_labels = [repmat({'1_L2'},16,1);repmat({'2_L3'},16,1);repmat({'3_L5'},16,1);repmat({'4_L6'},16,1)];
+
+
+% Produce the figure, collapsed across all monkeys
+test(1,1)=gramm('x',csd_mean_labels,'y',csd_mean_datain,'color',csd_mean_labels);
+test(1,1).stat_summary('geom',{'edge_bar','black_errorbar'});
+test(1,1).geom_jitter();
+test(1,1).geom_hline('yintercept',0,'style','k--');
+test(1,1).set_names('x','Cortical Layer','y','Mean CSD (uA)');
+test(1,1).no_legend;
+
+figure('Renderer', 'painters', 'Position', [100 100 300 300]);
+test.draw
+
+

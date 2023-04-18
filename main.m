@@ -28,7 +28,7 @@ load(fullfile(dirs.data_proc,'behavior\','bayesianSSRT.mat'))
 load(fullfile(dirs.data_proc,'behavior\','FileNames.mat'))
 
 % Extract matched trial indices
-get_matchedtrials
+trial_index_matched = get_matchedtrials(executiveBeh, dirs);
 
 %% Analysis codes %%%%%%%%%%%%%%%%%%%%%%%%%%%
 %{

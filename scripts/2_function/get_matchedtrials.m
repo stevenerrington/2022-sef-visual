@@ -1,5 +1,5 @@
 % Get matched trials for fairer comparison
-
+function trial_index_matched = get_matchedtrials(executiveBeh, dirs)
  
 %% Analyse: Extract trial indices across all sessions
 for session = 1:29

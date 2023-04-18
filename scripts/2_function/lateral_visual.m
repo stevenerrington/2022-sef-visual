@@ -42,13 +42,14 @@ parfor neuronlist_i = 1:n_neurons
     lateral_sdf_right_raw(neuronlist_i,:) = nanmean(spk_in.SDF.target(right_target_trl,:));
     
     % (2) Z-scored
-    fr_visual_baseline_mean_left = nanmean(nanmean(spk_in.SDF.target(left_target_trl,baseline_win)));
-    fr_visual_baseline_mean_right = nanmean(nanmean(spk_in.SDF.target(right_target_trl,baseline_win)));
-    fr_visual_baseline_std_left = nanstd(nanmean(spk_in.SDF.target(left_target_trl,baseline_win)));
-    fr_visual_baseline_std_right = nanstd(nanmean(spk_in.SDF.target(right_target_trl,baseline_win)));
-    lateral_sdf_left_zscore(neuronlist_i,:) = (nanmean(spk_in.SDF.target(left_target_trl,:))-fr_visual_baseline_mean_left)./fr_visual_baseline_std_left;
-    lateral_sdf_right_zscore(neuronlist_i,:) = (nanmean(spk_in.SDF.target(right_target_trl,:))-fr_visual_baseline_mean_right)./fr_visual_baseline_std_right;   
+    fr_visual_baseline_mean = nanmean(nanmean(spk_in.SDF.target([left_target_trl;right_target_trl],baseline_win)));
+    fr_visual_baseline_std = nanstd(nanmean(spk_in.SDF.target([left_target_trl;right_target_trl],baseline_win)));
+    lateral_sdf_left_zscore(neuronlist_i,:) = (nanmean(spk_in.SDF.target(left_target_trl,:))-fr_visual_baseline_mean)./fr_visual_baseline_std;
+    lateral_sdf_right_zscore(neuronlist_i,:) = (nanmean(spk_in.SDF.target(right_target_trl,:))-fr_visual_baseline_mean)./fr_visual_baseline_std;   
     
+    lateral_sdf_left_zscore_saccade(neuronlist_i,:) = (nanmean(spk_in.SDF.saccade(left_target_trl,:))-fr_visual_baseline_mean)./fr_visual_baseline_std;
+    lateral_sdf_right_zscore_saccade(neuronlist_i,:) = (nanmean(spk_in.SDF.saccade(right_target_trl,:))-fr_visual_baseline_mean)./fr_visual_baseline_std;   
+       
     
     % Get mean FR between trial types for future use.
     %   for a time period, relative to target onset
@@ -134,6 +135,12 @@ filename = fullfile(dirs.root,'results','gen_figures','lateralpop_figure_visual.
 set(lateral_pop_figure,'PaperSize',[20 10]); %set the paper size to what you want
 print(lateral_pop_figure,filename,'-dpdf') % then print it
 close(lateral_pop_figure)
+
+
+%%
+
+
+
 
 %% Organize: Save output
 save(fullfile(dirs.root,'results','mat_files','visual_lateral.mat'),'visual_lateral')
